@@ -231,8 +231,9 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
+    port = int(os.environ.get("PORT", 8000))
     print("🚀 Starting Chatbot Server...")
     print("💰 Cost: $0.00 (running LOCAL Ollama)")
-    print("🌐 Open: http://localhost:8000")
+    print(f"🌐 Listening on: 0.0.0.0:{port}")
     print("")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=port)

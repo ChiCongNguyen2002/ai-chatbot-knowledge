@@ -1,15 +1,14 @@
-# Multi-stage: extract ollama binary, then build single container for HF Spaces
-FROM ollama/ollama:latest AS ollama-src
+# Build on ollama/ollama base (has all Ollama dependencies)
+FROM ollama/ollama:latest
 
-FROM python:3.11-slim
-COPY --from=ollama-src /bin/ollama /usr/local/bin/ollama
-
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+# Add Python to the ollama image
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3-pip python3.11-venv curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY app_demo.py search.py entrypoint.sh ./
 RUN chmod +x entrypoint.sh
