@@ -18,11 +18,7 @@ RUN chmod +x entrypoint.sh
 ENV OLLAMA_HOST=http://localhost:11434
 ENV OLLAMA_MODEL=phi3:mini
 
-# Bake models into image at BUILD time
-RUN (ollama serve &) && sleep 5 \
-    && ollama pull phi3:mini \
-    && ollama pull bge-m3 \
-    && pkill ollama || true
+# NO model baking - will pull at startup instead (faster build, lighter image)
 
 EXPOSE 8000
 ENTRYPOINT ["./entrypoint.sh"]
