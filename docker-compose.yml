@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatbot-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  model-puller:
+    image: ollama/ollama:latest
+    container_name: chatbot-model-puller
+    command: sh -c "ollama pull mistral && ollama pull bge-m3"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+
+  chatbot:
+    image: python:3.9-slim
+    container_name: chatbot-app
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    depends_on:
+      model-puller:
+        condition: service_completed_successfully
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: bash -c "pip install -q -r requirements.txt 2>/dev/null && python app_demo.py"
+    networks:
+      - default
+
+volumes:
+  ollama_data:
