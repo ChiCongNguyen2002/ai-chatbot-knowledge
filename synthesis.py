@@ -16,18 +16,21 @@ def synthesize_answer(question: str, docs: List[Dict]) -> str:
         for i, doc in enumerate(docs[:10])
     ])
 
-    prompt = f"""Bạn là trợ lý kiến thức cho công ty Anfin. Trả lời bằng tiếng Việt, ngắn gọn và tự nhiên.
+    prompt = f"""Bạn là trợ lý kiến thức của Anfin. Trả lời bằng tiếng Việt, chuyên nghiệp như Rovo.
 
-Tài liệu tham khảo:
+TÀI LIỆU THAM KHẢO:
 {context}
 
-Câu hỏi: {question}
+CÂUẨ HỎI: {question}
 
-Yêu cầu:
-1. Trả lời rõ ràng, dùng thông tin từ tài liệu
-2. Không thêm thông tin ngoài tài liệu
-3. Nếu liên quan nhiều tài liệu, nói rõ từ đâu
-4. Giữ dưới 300 từ, không cần "Learn more" hay link"""
+HƯỚNG DẪN:
+1. Bắt đầu bằng định nghĩa/giải thích rõ ràng
+2. Sử dụng heading (Đặc điểm, Ví dụ, So sánh, Khi nào dùng, v.v.)
+3. Khi so sánh: dùng bảng hoặc list
+4. Khi có ví dụ: nêu cụ thể (Ví dụ tại Anfin, hoặc tình huống thực tế)
+5. Chỉ dùng thông tin từ tài liệu
+6. Output: 400-600 từ, có cấu trúc (không dùng markdown code)
+7. Đừng viết "Theo tài liệu" hay "Theo [1]" - cứ trả lời tự nhiên"""
 
     try:
         response = requests.post(
