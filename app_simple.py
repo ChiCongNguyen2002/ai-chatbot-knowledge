@@ -65,11 +65,14 @@ async def chat(req: ChatRequest):
             model="fallback"
         )
 
-    # Synthesize (with fallback)
+    # Synthesize (with fallback if Ollama fails)
     try:
         result = get_synthesis_response(req.question, docs)
+        # Check if answer contains error string
+        if "❌" in result["answer"] or "Lỗi" in result["answer"] or "Connection refused" in result["answer"]:
+            result = get_fallback_response(req.question, docs)
     except Exception as e:
-        # Ollama failed, use fallback structured formatting
+        # Ollama failed, use fallback
         result = get_fallback_response(req.question, docs)
 
     return ChatResponse(
