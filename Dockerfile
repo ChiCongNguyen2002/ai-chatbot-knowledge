@@ -17,8 +17,9 @@ RUN chmod +x entrypoint.sh
 # Environment for Railway
 ENV OLLAMA_HOST=http://localhost:11434
 ENV OLLAMA_MODEL=phi3:mini
+ENV PORT=8000
 
 # NO model baking - will pull at startup instead (faster build, lighter image)
 
-EXPOSE 8000
+EXPOSE ${PORT}
 ENTRYPOINT ["./entrypoint.sh"]
