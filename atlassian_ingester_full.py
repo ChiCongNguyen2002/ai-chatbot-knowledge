@@ -123,7 +123,7 @@ def create_full_confluence_data() -> List[Dict]:
         },
         {
             "title": "Coding Standards & Style Guide",
-            "content": "Standards: Go (gofmt, golint), Python (black, flake8), TypeScript (prettier, eslint). Naming: camelCase (variables), snake_case (constants), PascalCase (classes). Comments: explain WHY not WHAT. Max line length: 100 chars. Indentation: 4 spaces or 1 tab.",
+            "content": "Ngôn ngữ & Framework chuẩn: Backend (Golang chính, Python, NodeJS), Mobile (Flutter/Dart), Web (React, NextJS, TypeScript). Clean Code: Early return - tránh nested if/else sâu, return sớm khi điều kiện không thỏa. Inline error check - gộp err := func(); if err != nil thành một dòng. Error logging middleware - dùng failure.ErrWithTrace thay vì logger khắp nơi. Pub/Sub luôn acknowledge. Naming: Pub/Sub Topics: [service_name]-[event_name]-event. Subscriptions: [subscriber_service]-[topic]-sub. Redis Keys: {ServiceName}:{scope}:{entity}[:{id}]. Logging format: user_id=X, order_id=Y | FunctionName | error message. Git Workflow: feature branch từ main → PR → QC test → merge develop → merge main. Code Review Standards: Logic & requirement xử lý đúng, error/empty/loading state, code quality, naming rõ ràng, không duplicate, không magic number. Naming Conventions: camelCase (variables), snake_case (constants), PascalCase (classes/structs). Comments: explain WHY not WHAT - code nói được WHAT. Max line length: 100 chars. Indentation: 1 tab hoặc 4 spaces. Tools Go: gofmt, golint, golangci-lint. Python: black, flake8. TypeScript: prettier, eslint.",
             "category": "Code",
             "author": "Tan Huynh"
         },
