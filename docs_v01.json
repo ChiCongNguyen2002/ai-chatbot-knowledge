@@ -1,0 +1,82 @@
+[
+  {
+    "id": "jira-001",
+    "title": "Microservices Architecture Best Practices",
+    "source": "Jira / TECH-1234",
+    "content": "Micro-services is an architecture style that allows applications to be built as a set of loosely coupled, fine-grained services. Each service is independently deployable and runs its own process. Benefits include agility, maintainability, scalability, faster time to market, technology diversity, and increased reliability. Core design principles: independently deployable units, culture of automation, designing for failures, observability through logging and monitoring, clear API contracts between services.",
+    "space": "TECH",
+    "url": "https://anfin.atlassian.net/browse/TECH-1234"
+  },
+  {
+    "id": "jira-002",
+    "title": "Evaluating Microservices Architecture",
+    "source": "Jira / TECH-5678",
+    "content": "Understanding which part of the business will change most rapidly is crucial. A micro-services architecture embraces change by allowing independent deployment of services. Identify which business areas need the most flexibility and assign appropriate service boundaries. Core priorities to identify: reliability (SLA, uptime), innovation (time to market), efficiency (cost, performance). Support multiple API versioning approaches: URI path versioning, query parameter, content-type negotiation, custom header versioning. Each approach has trade-offs in terms of backward compatibility.",
+    "space": "TECH",
+    "url": "https://anfin.atlassian.net/browse/TECH-5678"
+  },
+  {
+    "id": "jira-003",
+    "title": "Notifications System Architecture",
+    "source": "Jira / PLATFORM-123",
+    "content": "Notification aggregation combines multiple similar notifications into single messages to prevent notification fatigue. Triggered when 3 or more unique incidents occur within a 60-second window. Implemented using Cloud Run background tasks that run at 2-minute intervals. The system groups duplicate alerts together and deduplicates by combining error signatures. This improves user experience by reducing alert noise while maintaining critical visibility into system issues.",
+    "space": "PLATFORM",
+    "url": "https://anfin.atlassian.net/browse/PLATFORM-123"
+  },
+  {
+    "id": "jira-004",
+    "title": "Coding Standards and Best Practices",
+    "source": "Jira / ENG-789",
+    "content": "All code must follow strict naming conventions: functions use snake_case, classes use PascalCase, constants use UPPER_SNAKE_CASE. Error handling is mandatory - never suppress exceptions silently. Every function must include proper error handling with specific error types, not generic Exception. Use early returns to reduce nesting. Prefer inline assignments in if statements. All I/O operations must be non-blocking. Database queries must use prepared statements to prevent injection. Code reviews are mandatory before merge. Tests must cover happy path and error cases.",
+    "space": "ENG",
+    "url": "https://anfin.atlassian.net/browse/ENG-789"
+  },
+  {
+    "id": "jira-005",
+    "title": "Database Performance and Indexing",
+    "source": "Jira / DATA-456",
+    "content": "Database indexing is critical for performance. Always index foreign keys and frequently queried columns. Use compound indexes for multi-column WHERE clauses. Monitor query execution plans regularly. Never lock resources while waiting for external services. Connection pooling is mandatory. Cache frequently accessed data but always validate cache freshness. Migrations must be idempotent and reversible. Never delete columns directly - mark as deprecated first. Use read replicas for reporting queries. Partitioning strategy depends on data volume and query patterns.",
+    "space": "DATA",
+    "url": "https://anfin.atlassian.net/browse/DATA-456"
+  },
+  {
+    "id": "jira-006",
+    "title": "API Design Guidelines",
+    "source": "Jira / API-111",
+    "content": "All APIs must use semantic HTTP status codes: 200 for success, 400 for bad request, 401 for unauthorized, 403 for forbidden, 404 for not found, 500 for server error. Request/response bodies must be JSON. Use consistent naming across all endpoints. API versioning via URL path is required: /v1/, /v2/ etc. All endpoints must validate input parameters. Rate limiting must be implemented. Authentication uses JWT tokens. CORS headers properly configured. API documentation mandatory on every endpoint. Deprecation policy: minimum 6 months notice before removal.",
+    "space": "API",
+    "url": "https://anfin.atlassian.net/browse/API-111"
+  },
+  {
+    "id": "jira-007",
+    "title": "Testing Strategy and Coverage",
+    "source": "Jira / QA-222",
+    "content": "Unit tests must cover all business logic paths. Minimum 80% code coverage required. Integration tests use real database (no mocks). Mocking only for external APIs. Test naming convention: test_[function]_[scenario]_[expected]. Assertions must be specific - avoid asserting entire objects. Test data must be isolated per test. CI/CD pipeline runs tests automatically on every commit. Failing tests block merge. Performance tests run nightly on staging. Load testing required before production release. All tests must pass locally before pushing.",
+    "space": "QA",
+    "url": "https://anfin.atlassian.net/browse/QA-222"
+  },
+  {
+    "id": "jira-008",
+    "title": "Logging and Monitoring Standards",
+    "source": "Jira / OPS-333",
+    "content": "Log format must include: [timestamp] [level] [service] [function] [message]. Log levels: DEBUG (development), INFO (important events), WARN (warning conditions), ERROR (errors), FATAL (system shutdown). Always include request ID for tracing. Structured logging using JSON for parsing. Never log sensitive data (passwords, tokens, PII). Log all errors with full stack trace. Monitoring dashboards must track: latency, error rate, throughput, resource usage. Alerts configured for abnormal patterns. Retention: logs kept for 90 days minimum. Performance impact of logging must be < 5%.",
+    "space": "OPS",
+    "url": "https://anfin.atlassian.net/browse/OPS-333"
+  },
+  {
+    "id": "jira-009",
+    "title": "Security Best Practices",
+    "source": "Jira / SEC-444",
+    "content": "All data in transit must use TLS 1.2 or higher. Encryption at rest required for sensitive data. Access control via role-based permissions (RBAC). Principle of least privilege always. API keys rotated every 90 days. Secrets stored in secure vault, never in code. SQL injection prevention via prepared statements. XSS prevention via output encoding. CSRF tokens on all state-changing operations. Regular security audits required. Dependency vulnerabilities scanned automatically. No hardcoded secrets. Audit logs kept for 1 year minimum.",
+    "space": "SEC",
+    "url": "https://anfin.atlassian.net/browse/SEC-444"
+  },
+  {
+    "id": "jira-010",
+    "title": "Deployment and Release Process",
+    "source": "Jira / RELEASE-555",
+    "content": "All deployments through CI/CD pipeline only. Manual deployment forbidden. Staging environment must mirror production exactly. Canary deployments: 5% traffic → 25% → 50% → 100%. Automated rollback if error rate exceeds threshold. Release notes required for every version. Semantic versioning: MAJOR.MINOR.PATCH. Database migrations run before code deployment. Feature flags for gradual rollout. Health checks verify deployment success. Monitoring alerts during first hour post-deployment. All deployments tracked with approval chain.",
+    "space": "RELEASE",
+    "url": "https://anfin.atlassian.net/browse/RELEASE-555"
+  }
+]
