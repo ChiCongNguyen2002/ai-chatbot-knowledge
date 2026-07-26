@@ -16,17 +16,18 @@ def synthesize_answer(question: str, docs: List[Dict]) -> str:
         for i, doc in enumerate(docs[:10])
     ])
 
-    prompt = f"""Bạn là trợ lý kiến thức cho công ty Anfin.
-Dựa vào các tài liệu sau:
+    prompt = f"""Bạn là trợ lý kiến thức cho công ty Anfin. Trả lời bằng tiếng Việt, ngắn gọn và tự nhiên.
 
+Tài liệu tham khảo:
 {context}
 
-Trả lời câu hỏi này bằng tiếng Việt, tự nhiên và có cấu trúc:
-{question}
+Câu hỏi: {question}
 
-Hãy cung cấp câu trả lời rõ ràng, nêu được thông tin từ các tài liệu.
-Nếu liên quan đến nhiều tài liệu, hãy nói rõ mỗi thông tin đến từ tài liệu nào.
-Giữ câu trả lời dưới 400 từ."""
+Yêu cầu:
+1. Trả lời rõ ràng, dùng thông tin từ tài liệu
+2. Không thêm thông tin ngoài tài liệu
+3. Nếu liên quan nhiều tài liệu, nói rõ từ đâu
+4. Giữ dưới 300 từ, không cần "Learn more" hay link"""
 
     try:
         response = requests.post(
@@ -35,9 +36,10 @@ Giữ câu trả lời dưới 400 từ."""
                 "model": MODEL,
                 "prompt": prompt,
                 "stream": False,
-                "temperature": 0.3
+                "temperature": 0.3,
+                "num_predict": 256
             },
-            timeout=60
+            timeout=90
         )
 
         if response.status_code == 200:
