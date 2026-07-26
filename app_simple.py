@@ -28,7 +28,7 @@ class ChatResponse(BaseModel):
     session_id: str
     answer: str
     sources: list
-    model: str = "mistral:latest"
+    model: str = "structured-synthesis"
 
 @app.get("/health")
 async def health():
