@@ -14,11 +14,21 @@ from synthesis_fallback import get_fallback_response
 app = FastAPI(title="Anfin Knowledge - Phase 4 Lite")
 search = SimpleSearch()
 
-GREETINGS = {'hello', 'hi', 'chào', 'xin chào', 'test', 'alo', 'hey', 'xin', 'chào bạn'}
+import re
+GREETINGS = {'hello', 'hi', 'chào', 'xin chào', 'alo', 'hey', 'xin', 'chào bạn', 'hola', 'hey bạn'}
 
 def is_greeting(text: str) -> bool:
+    """Detect greeting: must be EXACT word match at start/end, not substring"""
     text_lower = text.lower().strip()
-    return any(g in text_lower for g in GREETINGS)
+    # Only match if greeting is whole word at start or entire query is just greeting
+    for greeting in GREETINGS:
+        # Match at start as whole word
+        if re.match(rf'^{re.escape(greeting)}[\s\?!.]*$', text_lower):
+            return True
+        # Match if it's the only word with punctuation
+        if text_lower == greeting or text_lower == f"{greeting}?":
+            return True
+    return False
 
 class ChatRequest(BaseModel):
     question: str
