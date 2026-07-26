@@ -48,14 +48,38 @@ class SimpleSearch:
             'devops': ['Docker', 'Kubernetes', 'Monitoring', 'CI/CD', 'Kafka'],
             'deploy': ['Docker', 'Kubernetes', 'CI/CD', 'Kafka', 'deployment'],
             'microservice': ['Microservices Architecture'],
-            'vs': ['Microservices Architecture'],  # Boost Microservices for comparison queries
+            'vs': ['Microservices Architecture'],
             'comparison': ['Microservices Architecture'],
-            'nodejs': ['Coding Standards'],  # Exact match
+            'nodejs': ['Coding Standards'],
             'go': ['Go Routine', 'Concurrency Patterns'],
             'api': ['API Design', 'API Response', 'API Authentication'],
             'security': ['Security Best Practices'],
             'kafka': ['Kafka deployment', 'Kafka with Redpanda'],
             'testing': ['Testing', 'Unit Testing', 'Integration Testing'],
+            'monitor': ['Monitoring', 'Observability'],
+            'logging': ['Logging', 'Monitoring'],
+            'ci': ['CI/CD Pipeline'],
+            'cd': ['CI/CD Pipeline'],
+            'docker': ['Docker', 'Container'],
+            'k8s': ['Kubernetes'],
+            'kubernetes': ['Kubernetes', 'K8s'],
+            'db': ['Database'],
+            'database': ['Database', 'Optimization'],
+            'sql': ['Database', 'PostgreSQL'],
+            'redis': ['Redis Cache'],
+            'cache': ['Redis Cache', 'Caching'],
+        }
+
+        # Query expansion: synonyms for better matching
+        self.synonym_map = {
+            'devops': ['deploy', 'deployment', 'infrastructure', 'docker', 'kubernetes'],
+            'microservice': ['microservices', 'architecture', 'service-oriented'],
+            'goroutine': ['go routine', 'concurrent', 'concurrency'],
+            'testing': ['test', 'unit test', 'integration', 'e2e'],
+            'security': ['safe', 'auth', 'authentication', 'encryption'],
+            'database': ['db', 'sql', 'postgres', 'data'],
+            'api': ['endpoint', 'rest', 'http', 'interface'],
+            'logging': ['log', 'monitoring', 'observability', 'metrics'],
         }
         self._load_documents(docs_file)
 
@@ -116,8 +140,16 @@ class SimpleSearch:
 
         return min(10.0, boosted)  # Cap at 10.0
 
+    def _expand_query(self, tokens: List[str]) -> List[str]:
+        """Expand query with synonyms for better matching"""
+        expanded = list(tokens)
+        for token in tokens:
+            if token in self.synonym_map:
+                expanded.extend(self.synonym_map[token])
+        return list(set(expanded))  # Remove duplicates
+
     def bm25_search(self, query: str, top_k: int = 10) -> List[Dict]:
-        """BM25 search with intelligent boosting"""
+        """BM25 search with intelligent boosting and query expansion"""
         if not self.bm25:
             return []
 
@@ -125,7 +157,9 @@ class SimpleSearch:
         if not tokens:
             return []
 
-        scores = self.bm25.get_scores(tokens)
+        # Expand query with synonyms
+        expanded_tokens = self._expand_query(tokens)
+        scores = self.bm25.get_scores(expanded_tokens)
 
         # Rank by score with intelligent boosting
         ranked = []
