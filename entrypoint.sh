@@ -14,7 +14,7 @@ echo "✅ Ollama server ready"
 
 # Pull lightweight model (tinyllama fits Railway free tier)
 echo "📥 Pulling model (first run only)..."
-ollama pull tinyllama:1b
+ollama pull tinyllama
 
 echo "✅ Model ready"
 
