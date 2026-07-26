@@ -1,11 +1,9 @@
-"""Hybrid search: BM25 keyword ranking + semantic embedding rerank via Ollama"""
+"""BM25 keyword search - simplified for Railway free tier (no embeddings)"""
 
 import os
 import re
-import requests
-import numpy as np
 from rank_bm25 import BM25Okapi
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 DOCUMENTS = [
     {
@@ -28,11 +26,6 @@ DOCUMENTS = [
     }
 ]
 
-OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
-EMBEDDING_MODEL = "bge-m3"
-
-# Cache for embeddings (precomputed at startup)
-_embeddings_cache: Dict[str, np.ndarray] = {}
 _bm25_index = None
 _tokenized_docs = None
 
@@ -42,57 +35,22 @@ def _tokenize(text: str) -> List[str]:
     return re.findall(r"\w+", text.lower())
 
 
-def _embed(text: str) -> np.ndarray:
-    """Call Ollama embedding API, return numpy array."""
-    try:
-        response = requests.post(
-            f"{OLLAMA_HOST}/api/embeddings",
-            json={"model": EMBEDDING_MODEL, "prompt": text},
-            timeout=30
-        )
-        if response.status_code == 200:
-            embedding = response.json().get("embedding", [])
-            return np.array(embedding, dtype=np.float32)
-        else:
-            print(f"⚠️  Embedding API error: {response.status_code}")
-            return np.zeros(1024, dtype=np.float32)  # Fallback zero vector
-    except Exception as e:
-        print(f"⚠️  Embedding failed: {e}")
-        return np.zeros(1024, dtype=np.float32)
-
-
-def _cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
-    """Cosine similarity between two vectors."""
-    if len(vec1) == 0 or len(vec2) == 0:
-        return 0.0
-    norm1 = np.linalg.norm(vec1)
-    norm2 = np.linalg.norm(vec2)
-    if norm1 == 0 or norm2 == 0:
-        return 0.0
-    return float(np.dot(vec1, vec2) / (norm1 * norm2))
-
-
 def init_embeddings() -> None:
-    """Precompute embeddings for all documents at startup."""
-    global _embeddings_cache, _bm25_index, _tokenized_docs
+    """Initialize BM25 index (no embeddings for Railway free tier)."""
+    global _bm25_index, _tokenized_docs
 
-    print("🔄 Initializing search index...")
+    print("🔄 Initializing search index (BM25 only)...")
 
     # Build BM25 index
     _tokenized_docs = [_tokenize(doc["text"]) for doc in DOCUMENTS]
     _bm25_index = BM25Okapi(_tokenized_docs)
 
-    # Precompute embeddings
-    for doc in DOCUMENTS:
-        print(f"  Embedding: {doc['title']}...")
-        _embeddings_cache[doc["id"]] = _embed(doc["text"])
-
-    print(f"✅ Search index ready ({len(DOCUMENTS)} docs, BM25 + {EMBEDDING_MODEL})")
+    print(f"✅ Search index ready ({len(DOCUMENTS)} docs, BM25 ranking)")
 
 
 def hybrid_search(query: str, top_k: int = 3) -> List[Dict]:
     """
-    Hybrid search: BM25 keyword ranking + semantic embedding rerank.
+    BM25 keyword ranking (no embeddings to save memory).
 
     Returns: list of dicts with id, title, url, text, score
     """
@@ -100,33 +58,14 @@ def hybrid_search(query: str, top_k: int = 3) -> List[Dict]:
         print("⚠️  Search index not initialized, returning all docs")
         return DOCUMENTS[:top_k]
 
-    # Stage 1: BM25 keyword ranking
+    # BM25 keyword ranking
     query_tokens = _tokenize(query)
     bm25_scores = _bm25_index.get_scores(query_tokens)
 
-    # Stage 2: Semantic embedding rerank
-    query_embedding = _embed(query)
-    semantic_scores = [
-        _cosine_similarity(query_embedding, _embeddings_cache[doc["id"]])
-        for doc in DOCUMENTS
-    ]
-
-    # Stage 3: Normalize and combine scores
-    bm25_norm = np.array(bm25_scores)
-    if bm25_norm.max() > 0:
-        bm25_norm = bm25_norm / bm25_norm.max()
-
-    semantic_norm = np.array(semantic_scores)
-    if semantic_norm.max() > 0:
-        semantic_norm = semantic_norm / semantic_norm.max()
-
-    # Weighted combination: 40% BM25 (keyword), 60% semantic (contextual)
-    combined_scores = 0.4 * bm25_norm + 0.6 * semantic_norm
-
-    # Sort and return top-k with scores
+    # Sort and return top-k
     ranked = [
-        {**DOCUMENTS[i], "score": float(combined_scores[i])}
-        for i in np.argsort(-combined_scores)[:top_k]
+        {**DOCUMENTS[i], "score": float(bm25_scores[i])}
+        for i in sorted(range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True)[:top_k]
     ]
 
     return ranked

@@ -12,12 +12,11 @@ done
 
 echo "✅ Ollama server ready"
 
-# Pull models if not already present (first run only, ~2-3 min)
+# Pull models if not already present (first run only)
 echo "📥 Pulling models (first run only)..."
 ollama pull phi3:mini
-ollama pull bge-m3
 
-echo "✅ Models ready"
+echo "✅ Models ready (using BM25 search - no embeddings)"
 
 # Start FastAPI app as foreground process (PID 1)
 exec python app_demo.py
