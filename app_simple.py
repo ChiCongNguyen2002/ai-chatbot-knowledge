@@ -76,7 +76,115 @@ async def chat(req: ChatRequest):
 @app.get("/", response_class=HTMLResponse)
 async def root():
     doc_count = len(search.docs)
-    return f"""<html><head><title>🤖 Anfin Knowledge</title><meta charset="UTF-8"><style>body{{font-family:system-ui;padding:40px;max-width:900px;margin:auto;background:#f5f5f5}}h1{{color:#667eea}}.container{{background:white;padding:30px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}}.feature{{margin:10px 0;padding:10px;background:#f0f0f0;border-left:4px solid #667eea}}.metric{{display:inline-block;margin:10px 15px 0 0;padding:10px 15px;background:#667eea;color:white;border-radius:4px}}</style></head><body><h1>🤖 Anfin Knowledge - Phase 4 Lite</h1><div class="container"><p>Mistral 7B synthesis + simple BM25 search</p><div class="feature">✅ <strong>LLM:</strong> Mistral 7B (Vietnamese synthesis)</div><div class="feature">✅ <strong>Search:</strong> BM25 in-memory (no Elasticsearch)</div><div class="feature">✅ <strong>Data:</strong> {doc_count} real Confluence pages</div><div class="feature">✅ <strong>Quality:</strong> 99% Rovo-level</div><div class="feature">✅ <strong>Cost:</strong> $0/month</div><h3>Metrics:</h3><span class="metric">Documents: {doc_count}</span><span class="metric">Cost: $0</span><span class="metric">Speed: 10-15s</span><span class="metric">Quality: 95%+</span></div></body></html>"""
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>🤖 Anfin Knowledge - Rovo Chat</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }}
+        .container {{ background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 900px; width: 100%; padding: 40px; }}
+        h1 {{ color: #667eea; margin-bottom: 10px; font-size: 32px; }}
+        .subtitle {{ color: #666; margin-bottom: 30px; }}
+        .info-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }}
+        .info-box {{ background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; }}
+        .chat-section {{ margin-top: 30px; }}
+        .chat-box {{ background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; }}
+        .messages {{ height: 300px; overflow-y: auto; margin-bottom: 15px; background: white; border-radius: 6px; padding: 15px; border: 1px solid #e0e0e0; }}
+        .message {{ margin-bottom: 12px; padding: 10px; border-radius: 6px; word-wrap: break-word; }}
+        .message.user {{ background: #667eea; color: white; margin-left: 20px; text-align: right; }}
+        .message.bot {{ background: #e8eaf6; color: #333; margin-right: 20px; }}
+        .input-group {{ display: flex; gap: 10px; }}
+        input {{ flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }}
+        button {{ background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; }}
+        button:hover {{ background: #5568d3; }}
+        .loading {{ display: none; color: #667eea; text-align: center; margin: 10px 0; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Anfin Knowledge</h1>
+        <p class="subtitle">Mistral 7B + {doc_count} Confluence pages = Rovo-level chat</p>
+
+        <div class="info-grid">
+            <div class="info-box">✅ LLM: Mistral 7B</div>
+            <div class="info-box">✅ Search: BM25</div>
+            <div class="info-box">✅ Data: {doc_count} pages</div>
+            <div class="info-box">✅ Cost: $0</div>
+        </div>
+
+        <div class="chat-section">
+            <div class="chat-box">
+                <div class="messages" id="messages"></div>
+                <div class="loading" id="loading">⏳ Generating...</div>
+                <div class="input-group">
+                    <input type="text" id="question" placeholder="Hỏi: Microservices? Go? API? Testing?" />
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById("messages");
+        const questionInput = document.getElementById("question");
+        const loadingDiv = document.getElementById("loading");
+        let sessionId = "";
+
+        async function sendMessage() {{
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            const userMsg = document.createElement("div");
+            userMsg.className = "message user";
+            userMsg.textContent = question;
+            messagesDiv.appendChild(userMsg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            questionInput.value = "";
+            questionInput.disabled = true;
+            loadingDiv.style.display = "block";
+
+            try {{
+                const response = await fetch("/chat", {{
+                    method: "POST",
+                    headers: {{"Content-Type": "application/json"}},
+                    body: JSON.stringify({{question, session_id: sessionId}})
+                }});
+
+                const data = await response.json();
+                sessionId = data.session_id;
+
+                const botMsg = document.createElement("div");
+                botMsg.className = "message bot";
+                botMsg.innerHTML = data.answer.replace(/\\n/g, "<br>");
+                messagesDiv.appendChild(botMsg);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }} catch (error) {{
+                const errorMsg = document.createElement("div");
+                errorMsg.className = "message bot";
+                errorMsg.textContent = "❌ Error: " + error.message;
+                messagesDiv.appendChild(errorMsg);
+            }} finally {{
+                loadingDiv.style.display = "none";
+                questionInput.disabled = false;
+                questionInput.focus();
+            }}
+        }}
+
+        questionInput.addEventListener("keypress", (e) => {{
+            if (e.key === "Enter") sendMessage();
+        }});
+
+        const welcomeMsg = document.createElement("div");
+        welcomeMsg.className = "message bot";
+        welcomeMsg.textContent = "👋 Xin chào! Tôi là Rovo - hỏi tôi gì về Anfin knowledge base ({doc_count} pages)?";
+        messagesDiv.appendChild(welcomeMsg);
+    </script>
+</body>
+</html>"""
 
 if __name__ == "__main__":
     import uvicorn
