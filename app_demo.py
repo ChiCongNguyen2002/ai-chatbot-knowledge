@@ -68,12 +68,13 @@ Answer:"""
         if response.status_code == 200:
             return response.json().get("response", "No response")
         else:
-            return f"Ollama error: {response.status_code}"
+            # Fallback: return summary of documents when LLM fails
+            return f"⚠️ LLM unavailable. Based on documents: {', '.join([d['title'] for d in docs])} - please check the sources for details."
 
     except requests.exceptions.ConnectionError:
-        return "Ollama not ready yet. Please wait..."
+        return "⚠️ Ollama server not responding. Try again in a moment..."
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"⚠️ Error generating response: {str(e)}"
 
 # ===== API ENDPOINTS =====
 @app.post("/chat", response_model=ChatResponse)
@@ -112,7 +113,7 @@ async def health():
         "status": "ok",
         "cost": "$0.00",
         "type": f"LOCAL LLM (Ollama {OLLAMA_MODEL})",
-        "search": "Hybrid (BM25 + Semantic via bge-m3)",
+        "search": "BM25 keyword ranking",
         "documents": len(DOCUMENTS),
         "note": "Running completely local - NO API calls, NO credit card needed"
     }
@@ -202,15 +203,16 @@ async def root():
 
                     let botMsg = `<div class="bot-msg">${data.answer}`;
 
-                    if (data.sources && data.sources.length > 0) {
-                        botMsg += '<div class="sources"><strong>Sources:</strong>';
+                    // Only show sources if we got a real answer (not an error)
+                    if (data.answer && !data.answer.includes("error") && data.sources && data.sources.length > 0) {
+                        botMsg += '<div class="sources"><strong>📚 Sources:</strong>';
                         data.sources.forEach((s, i) => {
                             botMsg += `<br>[${i+1}] <a href="${s.url}" target="_blank">${s.title}</a>`;
                         });
                         botMsg += '</div>';
                     }
 
-                    botMsg += '<div class="cost-badge">💰 Cost: $0.00</div></div>';
+                    botMsg += '</div>';
 
                     messagesDiv.innerHTML += botMsg;
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
