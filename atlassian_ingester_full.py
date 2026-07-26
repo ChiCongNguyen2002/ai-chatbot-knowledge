@@ -289,6 +289,12 @@ def create_full_confluence_data() -> List[Dict]:
             "category": "Infrastructure",
             "author": "Tan Huynh"
         },
+        {
+            "title": "REST vs gRPC - Microservices Communication",
+            "content": "REST (Representational State Transfer) vs gRPC (Google RPC Framework) - hai cách chính để service giao tiếp trong microservices.\n\nREST API:\n• Protocol: HTTP/1.1 hoặc HTTP/2\n• Format: JSON (text-based)\n• Performance: Chậm hơn (serialization/deserialization text)\n• Debugging: Dễ (có thể inspect qua browser)\n• Ưu điểm: Đơn giản, chuẩn web, stateless\n\ngRPC:\n• Protocol: HTTP/2 + Protocol Buffers\n• Format: Binary (protobuf - serialization hiệu quả)\n• Performance: Nhanh hơn 7x (binary + multiplexing)\n• Debugging: Khó hơn (binary format)\n• Ưu điểm: Tốc độ, bandwidth thấp, HTTP/2 multiplexing\n\nSo sánh:\n| Tiêu chí | REST | gRPC |\n|----------|------|------|\n| Latency | 100ms | ~10-20ms |\n| Payload | 5KB JSON | 1KB protobuf |\n| Multiplexing | Không | Có (HTTP/2) |\n| Streaming | Polling | Real-time bidirectional |\n| Community | Lớn | Nhỏ nhưng growing |\n\nTại Anfin:\n• REST: Public API, Mobile SDK, Third-party\n• gRPC: Auth ↔ Order, Order ↔ Notification\n\n✅ Dùng REST: Public APIs, third-party, legacy\n✅ Dùng gRPC: Internal microservices, high frequency",
+            "category": "Architecture",
+            "author": "Cong Nguyen"
+        },
     ]
 
     documents = []
@@ -350,3 +356,4 @@ if __name__ == "__main__":
     docs = create_full_confluence_data()
     save_docs_to_file(docs)
     verify_ingestion(docs)
+
