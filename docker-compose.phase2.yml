@@ -44,7 +44,9 @@ services:
       done &&
       echo '📥 Pulling bge-m3 embedding model...' &&
       ollama pull bge-m3 &&
-      echo '✅ Models ready'
+      echo '📥 Pulling mistral:latest for synthesis...' &&
+      ollama pull mistral:latest &&
+      echo '✅ All models ready'
     "
     environment:
       - OLLAMA_HOST=http://ollama:11434

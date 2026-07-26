@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List
 from search_phase2 import HybridSearch
-from synthesis import get_synthesis_response
+from synthesis_ultimate import get_synthesis_response
 
 app = FastAPI(title="Anfin Knowledge - Phase 3")
 hs = HybridSearch()

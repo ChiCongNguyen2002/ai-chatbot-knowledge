@@ -30,13 +30,13 @@ os.system("ollama pull bge-m3")
 print("   - Qwen 7B (synthesis)")
 os.system("ollama pull qwen:7b-int4")
 
-print("\n3️⃣ Ingesting REAL Confluence data...")
+print("\n3️⃣ Ingesting 40+ REAL Confluence pages...")
 try:
-    from atlassian_ingester_real import create_real_documents, save_docs_to_file, verify_ingestion
-    docs = create_real_documents()
+    from atlassian_ingester_full import create_full_confluence_data, save_docs_to_file, verify_ingestion
+    docs = create_full_confluence_data()
     save_docs_to_file(docs)
     verify_ingestion(docs)
-    print("✅ REAL data ingestion complete")
+    print("✅ Full Confluence data loaded")
 except Exception as e:
     print(f"⚠️ {e}")
 
