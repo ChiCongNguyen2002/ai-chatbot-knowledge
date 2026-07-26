@@ -38,43 +38,25 @@ OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "mistral")
 
 def call_ollama(question: str, docs: List[dict]) -> str:
-    """Call Ollama running locally - NO API COST"""
+    """Extract relevant content from documents (no LLM needed)"""
 
-    # Build context
-    context = "Documents:\n"
+    if not docs:
+        return "No relevant documents found. Please rephrase your question."
+
+    # Build answer from document content
+    answer = "Based on the knowledge base:\n\n"
+
     for i, doc in enumerate(docs, 1):
-        context += f"\n[{i}] {doc['title']}\n{doc['text']}\n"
+        answer += f"**{i}. {doc['title']}:**\n"
+        # Get relevant excerpt (first 300 chars)
+        excerpt = doc['text'][:300]
+        if len(doc['text']) > 300:
+            excerpt += "..."
+        answer += f"{excerpt}\n\n"
 
-    prompt = f"""Answer based on these documents:
+    answer += "👉 Click sources below for full details"
 
-{context}
-
-Question: {question}
-
-Answer:"""
-
-    try:
-        # Call Ollama (running locally on port 11434)
-        response = requests.post(
-            f"{OLLAMA_HOST}/api/generate",
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-            },
-            timeout=60
-        )
-
-        if response.status_code == 200:
-            return response.json().get("response", "No response")
-        else:
-            # Fallback: return summary of documents when LLM fails
-            return f"⚠️ LLM unavailable. Based on documents: {', '.join([d['title'] for d in docs])} - please check the sources for details."
-
-    except requests.exceptions.ConnectionError:
-        return "⚠️ Ollama server not responding. Try again in a moment..."
-    except Exception as e:
-        return f"⚠️ Error generating response: {str(e)}"
+    return answer
 
 # ===== API ENDPOINTS =====
 @app.post("/chat", response_model=ChatResponse)
