@@ -7,9 +7,9 @@ COPY --from=ollama-base /bin/ollama /usr/local/bin/ollama
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies + supervisor
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates \
+    curl ca-certificates supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for layer caching)
@@ -22,6 +22,7 @@ COPY atlassian_ingester_full.py \
     synthesis_ultimate.py \
     app_simple.py \
     entrypoint_simple.py \
+    supervisord.conf \
     ./
 
 # Environment
@@ -29,11 +30,14 @@ ENV PORT=8000
 ENV PYTHONUNBUFFERED=1
 ENV OLLAMA_HOST=http://localhost:11434
 
-# Health check - very long timeout for model download
-HEALTHCHECK --interval=60s --timeout=30s --start-period=60s --retries=5 \
+# Setup directories for Ollama
+RUN mkdir -p /root/.ollama/models
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=30s --start-period=120s --retries=5 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 EXPOSE ${PORT}
 
-# Start entrypoint which manages Ollama + FastAPI
-CMD ["python", "entrypoint_simple.py"]
+# Start with supervisor to manage both Ollama + FastAPI
+CMD ["/usr/bin/supervisord", "-c", "/app/supervisord.conf"]
