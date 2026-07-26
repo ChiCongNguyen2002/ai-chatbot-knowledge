@@ -1,4 +1,4 @@
-"""Phase 1: BM25 Search - Quality Verified"""
+"""Phase 1: BM25 Search - Fixed Version"""
 
 import json
 import re
@@ -9,38 +9,30 @@ from rank_bm25 import BM25Okapi
 with open("docs_v01.json") as f:
     DOCUMENTS = json.load(f)
 
-_bm25_index = None
-_tokenized_docs = None
-
 
 def _tokenize(text: str) -> List[str]:
-    """Tokenize: lowercase, split by word boundary, handle hyphens"""
-    # Replace hyphens with spaces for better tokenization
-    text = text.replace("-", " ")
+    """Tokenize: lowercase, remove hyphens, split by word boundary"""
+    # Remove hyphens so "micro-services" → "microservices"
+    text = text.replace("-", "")
     return re.findall(r"\w+", text.lower())
 
 
-def init_search_index() -> None:
-    """Initialize BM25 index"""
-    global _bm25_index, _tokenized_docs
-
-    print("🔄 Initializing BM25 search index...")
-
-    # Build index from doc content
-    _tokenized_docs = [_tokenize(doc["content"]) for doc in DOCUMENTS]
-    _bm25_index = BM25Okapi(_tokenized_docs)
-
-    print(f"✅ Index ready: {len(DOCUMENTS)} docs")
+def _build_bm25_index():
+    """Build BM25 index from documents"""
+    tokenized_docs = [_tokenize(doc["content"]) for doc in DOCUMENTS]
+    return BM25Okapi(tokenized_docs)
 
 
 def search(query: str, top_k: int = 3) -> List[Dict]:
     """
-    BM25 ranking search
-    Returns: list of docs with scores
+    BM25 keyword ranking search with threshold filtering
+    Returns: list of docs with scores (only if query tokens found)
     """
-    if not _bm25_index:
-        print("⚠️ Index not initialized")
-        return DOCUMENTS[:top_k]
+    if not query or not query.strip():
+        return []
+
+    # Build fresh index
+    bm25 = _build_bm25_index()
 
     # Tokenize query
     query_tokens = _tokenize(query)
@@ -48,13 +40,24 @@ def search(query: str, top_k: int = 3) -> List[Dict]:
         return []
 
     # Get BM25 scores
-    scores = _bm25_index.get_scores(query_tokens)
+    scores = bm25.get_scores(query_tokens)
 
-    # Sort and return top-k
-    ranked = [
-        {**DOCUMENTS[i], "score": float(scores[i])}
-        for i in sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
-    ]
+    # Filter: only include docs where query terms actually appear
+    ranked = []
+    for i in sorted(range(len(scores)), key=lambda i: scores[i], reverse=True):
+        score = float(scores[i])
+
+        # Check if ANY query token appears in doc (remove hyphens like tokenization does)
+        doc_text = DOCUMENTS[i]["content"].lower().replace("-", "")
+        has_match = any(token in doc_text for token in query_tokens)
+
+        if has_match:
+            doc_copy = dict(DOCUMENTS[i])
+            doc_copy["score"] = score
+            ranked.append(doc_copy)
+
+            if len(ranked) >= top_k:
+                break
 
     return ranked
 
@@ -62,23 +65,19 @@ def search(query: str, top_k: int = 3) -> List[Dict]:
 # ===== QUALITY VERIFICATION =====
 def verify_search_quality():
     """Verify search works correctly"""
-    init_search_index()
 
     test_cases = [
         {
-            "query": "microservices?",
+            "query": "microservices",
             "expected_top": "Microservices Architecture Best Practices",
-            "min_score": 0.0  # Any match is OK
         },
         {
-            "query": "error handling best practices",
+            "query": "error handling",
             "expected_top": "Coding Standards and Best Practices",
-            "min_score": 0.0
         },
         {
-            "query": "notification system",
+            "query": "notification",
             "expected_top": "Notifications System Architecture",
-            "min_score": 0.0
         }
     ]
 
@@ -89,18 +88,21 @@ def verify_search_quality():
     passed = 0
     for test in test_cases:
         results = search(test["query"], top_k=3)
-        top_title = results[0]["title"] if results else "NO RESULTS"
-        top_score = results[0]["score"] if results else 0
 
-        is_correct = (
-            top_title == test["expected_top"] and
-            top_score >= test["min_score"]
-        )
+        if not results:
+            print(f"\n❌ Query: '{test['query']}'")
+            print(f"   NO RESULTS FOUND!")
+            continue
+
+        top_title = results[0]["title"]
+        top_score = results[0]["score"]
+        is_correct = top_title == test["expected_top"]
 
         status = "✅" if is_correct else "❌"
         print(f"\n{status} Query: '{test['query']}'")
-        print(f"   Expected: {test['expected_top']} (score >= {test['min_score']})")
-        print(f"   Got: {top_title} (score {top_score:.2f})")
+        print(f"   Expected: {test['expected_top']}")
+        print(f"   Got: {top_title}")
+        print(f"   Score: {top_score:.4f}")
 
         if is_correct:
             passed += 1

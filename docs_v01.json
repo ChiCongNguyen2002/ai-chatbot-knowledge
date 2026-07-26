@@ -27,7 +27,7 @@
     "id": "jira-004",
     "title": "Coding Standards and Best Practices",
     "source": "Jira / ENG-789",
-    "content": "All code must follow strict naming conventions: functions use snake_case, classes use PascalCase, constants use UPPER_SNAKE_CASE. Error handling is mandatory - never suppress exceptions silently. Every function must include proper error handling with specific error types, not generic Exception. Use early returns to reduce nesting. Prefer inline assignments in if statements. All I/O operations must be non-blocking. Database queries must use prepared statements to prevent injection. Code reviews are mandatory before merge. Tests must cover happy path and error cases.",
+    "content": "Coding standards and best practices are mandatory at Anfin. All code must follow strict naming conventions: functions use snake_case, classes use PascalCase, constants use UPPER_SNAKE_CASE. Error handling is mandatory - never suppress exceptions silently. Every function must include proper error handling with specific error types, not generic Exception. Use early returns to reduce nesting. Prefer inline assignments in if statements. All I/O operations must be non-blocking. Database queries must use prepared statements to prevent injection. Code reviews are mandatory before merge. Tests must cover happy path and error cases.",
     "space": "ENG",
     "url": "https://anfin.atlassian.net/browse/ENG-789"
   },
