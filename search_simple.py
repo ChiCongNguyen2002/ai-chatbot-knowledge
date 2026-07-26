@@ -25,13 +25,43 @@ def normalize_plural(token: str) -> str:
         return token[:-1]
     return token
 
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """Calculate Levenshtein distance between two strings (for typo tolerance)"""
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+
+    return previous_row[-1]
+
+def find_closest_token(token: str, candidates: List[str], max_distance: int = 2) -> str:
+    """Find closest matching token from candidates using Levenshtein distance"""
+    if not candidates:
+        return token
+
+    closest = min(candidates, key=lambda c: levenshtein_distance(token, c))
+    distance = levenshtein_distance(token, closest)
+
+    # Return closest if within max distance, otherwise return original
+    return closest if distance <= max_distance else token
+
 def tokenize(text: str, normalize_plurals: bool = True) -> List[str]:
     """Tokenize text: remove punctuation, lowercase, filter stop words, normalize plurals"""
     # Remove punctuation and lowercase
     text = re.sub(r'[^\w\s]', '', text.lower())
     # Split and filter
     tokens = [t for t in text.split() if t and t not in STOP_WORDS]
-    # Normalize plurals to singular (don't add both forms - breaks BM25 scoring)
+    # Normalize plurals to singular
     if normalize_plurals:
         tokens = [normalize_plural(t) for t in tokens]
     return tokens
@@ -52,7 +82,7 @@ class SimpleSearch:
             'comparison': ['Microservices Architecture'],
             'nodejs': ['Coding Standards'],
             'go': ['Go Routine', 'Concurrency Patterns'],
-            'api': ['API Design', 'API Response', 'API Authentication'],
+            'api': ['Nguyên tắc tối ưu thiết kế API', 'API Design', 'API Response'],
             'security': ['Security Best Practices'],
             'kafka': ['Kafka deployment', 'Kafka with Redpanda'],
             'testing': ['Testing', 'Unit Testing', 'Integration Testing'],
@@ -112,7 +142,10 @@ class SimpleSearch:
 
         boosted = bm25_score
 
-        # Boost 1: Keyword-to-document mapping (HIGHEST PRIORITY)
+        # Boost 1: Document length first (longer = more authoritative)
+        doc_length = len(doc_content.split())
+
+        # Boost 2: Keyword-to-document mapping (HIGHEST PRIORITY)
         for keyword, preferred_docs in self.keyword_map.items():
             if keyword in query_lower:
                 # Check if current doc title matches any preferred doc
@@ -121,18 +154,24 @@ class SimpleSearch:
                         boosted *= 2.5  # Strong boost for keyword match
                         break
 
-        # Boost 2: Document length (longer = more authoritative)
-        doc_length = len(doc_content.split())
+        # Boost 3: Prefer comprehensive/main docs for single-word queries
+        if len(query_lower.split()) == 1:  # Single word query
+            # Boost docs that contain the keyword in title AND are comprehensive
+            for word in query_lower.split():
+                if word in doc_title and doc_length > 200:
+                    boosted *= 1.5  # Boost comprehensive docs
+
+        # Boost 4: Document length (longer = more authoritative)
         if doc_length > 300:
             boosted *= 1.2  # +20% for long docs
 
-        # Boost 3: Title keyword match (medium weight)
+        # Boost 5: Title keyword match (medium weight)
         query_words = [w for w in query_lower.split() if len(w) > 3]  # Only significant words
         title_matches = sum(1 for word in query_words if word in doc_title)
         if title_matches > 0:
             boosted *= (1 + 0.2 * title_matches)  # +20% per match
 
-        # Penalize generic "best practices" docs if specific keyword present
+        # Boost 6: Penalize generic "best practices" docs if specific keyword present
         if "best practice" in doc_title and len(query_words) > 1:
             specific_keyword = [w for w in query_words if w not in ['best', 'practice', 'practices']]
             if specific_keyword and specific_keyword[0] not in doc_title:
@@ -149,7 +188,7 @@ class SimpleSearch:
         return list(set(expanded))  # Remove duplicates
 
     def bm25_search(self, query: str, top_k: int = 10) -> List[Dict]:
-        """BM25 search with intelligent boosting and query expansion"""
+        """BM25 search with intelligent boosting, query expansion, and fuzzy matching"""
         if not self.bm25:
             return []
 
@@ -157,8 +196,23 @@ class SimpleSearch:
         if not tokens:
             return []
 
+        # Get all available tokens from documents
+        all_vocab = set()
+        for doc_tokens in self.tokenized_docs:
+            all_vocab.update(doc_tokens)
+
+        # Apply fuzzy matching for typos: replace misspelled tokens with closest matches
+        fuzzy_tokens = []
+        for token in tokens:
+            if token in all_vocab:
+                fuzzy_tokens.append(token)
+            else:
+                # Try to find close match (typo correction)
+                closest = find_closest_token(token, list(all_vocab), max_distance=2)
+                fuzzy_tokens.append(closest)
+
         # Expand query with synonyms
-        expanded_tokens = self._expand_query(tokens)
+        expanded_tokens = self._expand_query(fuzzy_tokens)
         scores = self.bm25.get_scores(expanded_tokens)
 
         # Rank by score with intelligent boosting
