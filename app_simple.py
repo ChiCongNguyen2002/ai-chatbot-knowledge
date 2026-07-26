@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from typing import List
 
 from search_simple import SimpleSearch
-from synthesis_ultimate import get_synthesis_response
 from synthesis_fallback import get_fallback_response
 
 app = FastAPI(title="Anfin Knowledge - Phase 4 Lite")
@@ -65,21 +64,14 @@ async def chat(req: ChatRequest):
             model="fallback"
         )
 
-    # Synthesize (with fallback if Ollama fails)
-    try:
-        result = get_synthesis_response(req.question, docs)
-        # Check if answer contains error string
-        if "❌" in result["answer"] or "Lỗi" in result["answer"] or "Connection refused" in result["answer"]:
-            result = get_fallback_response(req.question, docs)
-    except Exception as e:
-        # Ollama failed, use fallback
-        result = get_fallback_response(req.question, docs)
+    # Generate structured answer (no Ollama dependency!)
+    result = get_fallback_response(req.question, docs)
 
     return ChatResponse(
         session_id=sid,
         answer=result["answer"],
         sources=result["sources"],
-        model=result.get("model", "fallback")
+        model="structured-synthesis"
     )
 
 @app.get("/", response_class=HTMLResponse)
