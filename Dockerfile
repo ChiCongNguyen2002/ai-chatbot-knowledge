@@ -16,24 +16,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy Phase 4 application files
+# Copy Phase 4 Lite files (NO Elasticsearch!)
 COPY atlassian_ingester_full.py \
-    search_phase2.py \
+    search_simple.py \
     synthesis_ultimate.py \
-    app_phase2.py \
-    entrypoint_phase2.py \
+    app_simple.py \
+    entrypoint_simple.py \
     ./
 
 # Environment
 ENV PORT=8000
 ENV PYTHONUNBUFFERED=1
 ENV OLLAMA_HOST=http://localhost:11434
-ENV ES_HOST=http://localhost:9200
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 EXPOSE ${PORT}
 
-CMD ["python", "entrypoint_phase2.py"]
+# Simple: Ollama background + FastAPI foreground
+CMD bash -c "ollama serve >/dev/null 2>&1 &" && sleep 2 && python entrypoint_simple.py
