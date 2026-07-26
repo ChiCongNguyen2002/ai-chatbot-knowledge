@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy Phase 4 Lite files (NO Elasticsearch!)
 COPY atlassian_ingester_full.py \
     search_simple.py \
-    synthesis_ultimate.py \
+    synthesis_fallback.py \
     app_simple.py \
     entrypoint_simple.py \
     supervisord.conf \
