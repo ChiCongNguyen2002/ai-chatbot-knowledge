@@ -91,7 +91,19 @@ async def chat(request: ChatRequest):
     docs = search(request.question, top_k=3)
 
     if not docs:
-        answer = "Xin lỗi, không tìm thấy tài liệu liên quan. Bạn có thể rephrase câu hỏi không?"
+        answer = """Xin lỗi, kiến thức này chưa được cập nhật trong hệ thống của Anfin.
+
+Hiện tại, tôi có thông tin về:
+• Microservices Architecture
+• Coding Standards & Best Practices
+• Testing Strategy
+• Database Performance
+• API Design
+• Notifications System
+• Deployment Process
+• Security Best Practices
+
+Bạn có câu hỏi về các chủ đề này không? Hoặc bạn muốn update thêm kiến thức mới?"""
         sources = []
     else:
         # Phase 1: Simple template answer (not LLM synthesis yet)
