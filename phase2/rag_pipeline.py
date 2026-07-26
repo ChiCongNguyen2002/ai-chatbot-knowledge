@@ -95,7 +95,7 @@ class RAGPipeline:
         print("[RAGPipeline] Initialized with 9-stage architecture")
         print(f"  - {len(documents)} documents indexed")
         print("  - Stages: Rewrite → Search → Rerank → Chunk → Filter → Graph → Compress → Cite → Memory")
-        print("  - Safety: ULTRA-STRICT (85%+ confidence required)")
+        print("  - Safety: ULTRA-STRICT (78% confidence, 85% top score minimum)")
 
     def search(
         self,
