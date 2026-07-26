@@ -25,20 +25,16 @@ def normalize_plural(token: str) -> str:
         return token[:-1]
     return token
 
-def tokenize(text: str) -> List[str]:
+def tokenize(text: str, normalize_plurals: bool = True) -> List[str]:
     """Tokenize text: remove punctuation, lowercase, filter stop words, normalize plurals"""
     # Remove punctuation and lowercase
     text = re.sub(r'[^\w\s]', '', text.lower())
     # Split and filter
     tokens = [t for t in text.split() if t and t not in STOP_WORDS]
-    # Normalize plurals: include both singular and normalized form
-    normalized = []
-    for t in tokens:
-        normalized.append(t)
-        singular = normalize_plural(t)
-        if singular != t:
-            normalized.append(singular)
-    return normalized
+    # Normalize plurals to singular (don't add both forms - breaks BM25 scoring)
+    if normalize_plurals:
+        tokens = [normalize_plural(t) for t in tokens]
+    return tokens
 
 class SimpleSearch:
     """BM25 + Ollama embeddings, in-memory"""
@@ -56,8 +52,13 @@ class SimpleSearch:
                 self.docs = json.load(f)
             print(f"✅ Loaded {len(self.docs)} documents")
 
-            # Tokenize for BM25
-            self.tokenized_docs = [tokenize(doc['content']) for doc in self.docs]
+            # Tokenize for BM25: include title + content so title keywords aren't lost
+            self.tokenized_docs = []
+            for doc in self.docs:
+                # Combine title and content for better matching
+                full_text = f"{doc['title']} {doc['content']}"
+                self.tokenized_docs.append(tokenize(full_text))
+
             self.bm25 = BM25Okapi(self.tokenized_docs)
             print(f"✅ BM25 index ready")
         except Exception as e:
