@@ -1,22 +1,20 @@
-FROM ollama/ollama:latest AS ollama-base
-
 FROM python:3.11-slim
-
-# Copy Ollama binary from base image
-COPY --from=ollama-base /bin/ollama /usr/local/bin/ollama
 
 WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates \
+    curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (for layer caching)
+# Install Ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Copy requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy Phase 4 application files
+# Copy Phase 4 files
 COPY atlassian_ingester_full.py \
     search_phase2.py \
     synthesis_ultimate.py \
@@ -24,16 +22,13 @@ COPY atlassian_ingester_full.py \
     entrypoint_phase2.py \
     ./
 
-# Environment
+# Set environment
 ENV PORT=8000
 ENV PYTHONUNBUFFERED=1
 ENV OLLAMA_HOST=http://localhost:11434
 ENV ES_HOST=http://localhost:9200
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
+EXPOSE 8000
 
-EXPOSE ${PORT}
-
-CMD ["python", "entrypoint_phase2.py"]
+# Start Ollama in background, then run app
+CMD bash -c "ollama serve &" && sleep 3 && python entrypoint_phase2.py
