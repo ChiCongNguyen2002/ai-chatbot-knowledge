@@ -1,77 +1,15 @@
 version: '3.8'
 
 services:
-  # Elasticsearch for hybrid search
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: anfin-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
-    volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: curl -f http://localhost:9200/_cluster/health || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Ollama for embeddings
-  ollama:
-    image: ollama/ollama:latest
-    container_name: anfin-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    environment:
-      - OLLAMA_HOST=0.0.0.0:11434
-
-  # Model puller (pulls bge-m3 for embeddings)
-  model-puller:
-    image: ollama/ollama:latest
-    container_name: anfin-model-puller
-    depends_on:
-      ollama:
-        condition: service_started
-    command: bash -c "
-      until curl -sf http://ollama:11434/api/tags >/dev/null 2>&1; do
-        echo '⏳ Waiting for Ollama...'
-        sleep 2
-      done &&
-      echo '📥 Pulling bge-m3 embedding model...' &&
-      ollama pull bge-m3 &&
-      echo '📥 Pulling mistral:latest for synthesis...' &&
-      ollama pull mistral:latest &&
-      echo '✅ All models ready'
-    "
-    environment:
-      - OLLAMA_HOST=http://ollama:11434
-
-  # FastAPI Chatbot
   chatbot:
     build:
       context: .
       dockerfile: Dockerfile.phase2
-    container_name: anfin-chatbot-phase2
     ports:
       - "8000:8000"
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-      ollama:
-        condition: service_started
-      model-puller:
-        condition: service_completed_successfully
     environment:
-      - ES_HOST=http://elasticsearch:9200
-      - OLLAMA_HOST=http://ollama:11434
       - PORT=8000
-    command: python entrypoint_phase2.py
-
-volumes:
-  elasticsearch-data:
-  ollama-data:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+    command: python app_phase2.py

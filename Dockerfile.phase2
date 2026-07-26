@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements-phase2.txt requirements.txt
+RUN pip install -q -r requirements.txt && \
+    pip install -q fastapi uvicorn
+
+# Copy app and code
+COPY app_phase2.py .
+COPY atlassian_ingester_full.py .
+COPY phase2 phase2/
+
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8000
+
+EXPOSE 8000
+
+CMD ["python", "app_phase2.py"]
