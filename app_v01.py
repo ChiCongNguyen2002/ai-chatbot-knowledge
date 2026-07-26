@@ -1,8 +1,9 @@
-"""Phase 1: FastAPI MVP - Simple template-based answers"""
+"""Phase 1: FastAPI MVP - With Greeting Detection"""
 
 import os
 import json
 import uuid
+import random
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -11,6 +12,40 @@ from typing import List
 from search_v01 import search, init_search_index, DOCUMENTS
 
 app = FastAPI(title="AI Chatbot Knowledge v0.1")
+
+
+# ===== GREETING DETECTION =====
+GREETINGS = {
+    'hello', 'hi', 'hey', 'greetings', 'what\'s up',
+    'chào', 'xin chào', 'alo', 'yo',
+    'morning', 'afternoon', 'evening',
+    'can you hear me', 'are you there', 'test', 'hello?', 'hi?'
+}
+
+def is_greeting(text: str) -> bool:
+    """Check if text is a greeting/test message"""
+    text_lower = text.lower().strip()
+
+    # Exact matches
+    if text_lower in GREETINGS:
+        return True
+
+    # Short messages with greeting keywords
+    if len(text_lower.split()) <= 2:
+        for greeting in GREETINGS:
+            if greeting in text_lower:
+                return True
+
+    return False
+
+def get_greeting_response() -> str:
+    """Return friendly greeting response"""
+    responses = [
+        "👋 Xin chào! Tôi là knowledge search bot của Anfin. Bạn có câu hỏi gì về công ty không?",
+        "Hi 👋 Mình sẵn sàng giúp bạn tìm kiếm kiến thức. Hỏi tôi về microservices, coding standards, hoặc bất kỳ chủ đề nào!",
+        "Chào bạn! 😊 Hôm nay bạn muốn biết gì về Anfin?",
+    ]
+    return random.choice(responses)
 
 
 # ===== MODELS =====
@@ -28,7 +63,7 @@ class ChatResponse(BaseModel):
 # ===== STARTUP =====
 @app.on_event("startup")
 async def startup():
-    """Initialize search index"""
+    """Initialize search index on startup."""
     init_search_index()
 
 
@@ -41,21 +76,29 @@ async def health():
         "version": "0.1 MVP",
         "documents": len(DOCUMENTS),
         "cost": "$0.00",
-        "type": "BM25 keyword search + template answers"
+        "type": "BM25 keyword search + greeting detection"
     }
 
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Chat endpoint - Phase 1 MVP (template answers)"""
+    """Chat endpoint - Phase 1 MVP with greeting detection"""
 
     session_id = request.session_id or str(uuid.uuid4())
+
+    # Check if greeting
+    if is_greeting(request.question):
+        return ChatResponse(
+            session_id=session_id,
+            answer=get_greeting_response(),
+            sources=[]
+        )
 
     # Search for relevant docs
     docs = search(request.question, top_k=3)
 
     if not docs:
-        answer = "No relevant documents found. Please try rephrasing your question."
+        answer = "Xin lỗi, không tìm thấy tài liệu liên quan. Bạn có thể rephrase câu hỏi không?"
         sources = []
     else:
         # Phase 1: Simple template answer (not LLM synthesis yet)
@@ -216,16 +259,16 @@ async def root():
             <div class="header">
                 <h1>🤖 Anfin Knowledge Search</h1>
                 <p>Search company knowledge base instantly</p>
-                <div class="badge">v0.1 MVP | 10 Documents | $0.00</div>
+                <div class="badge">v0.1 MVP | 10 Documents | $0.00 | Greeting Detection ✅</div>
             </div>
 
             <div class="chat-container">
                 <div class="messages" id="messages">
                     <div class="bot-msg">
-                        👋 Hi! I'm searching Anfin's knowledge base.
+                        👋 Xin chào! Tôi là knowledge search bot của Anfin.
                         <br><br>
-                        Try asking about:
-                        <br>• Microservices architecture
+                        Bạn có thể hỏi tôi về:
+                        <br>• Microservices
                         <br>• Coding standards
                         <br>• Testing strategy
                         <br>• API design
@@ -236,7 +279,7 @@ async def root():
                 <div class="loading" id="loading">⏳ Searching...</div>
 
                 <div class="input-group">
-                    <input type="text" id="question" placeholder="Ask about company practices..." onkeypress="if(event.key==='Enter') sendMessage()">
+                    <input type="text" id="question" placeholder="Hỏi gì đó..." onkeypress="if(event.key==='Enter') sendMessage()">
                     <button onclick="sendMessage()">Send</button>
                 </div>
             </div>
@@ -279,6 +322,7 @@ async def root():
                     }
 
                     botMsg += '</div>';
+
                     messagesDiv.innerHTML += botMsg;
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
                 } catch (error) {
@@ -297,6 +341,6 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     print("🚀 Starting Anfin Knowledge Search v0.1")
-    print(f"💰 Cost: $0.00 (local BM25 search)")
+    print(f"💰 Cost: $0.00 (local BM25 search + greeting detection)")
     print(f"🌐 Listening on: 0.0.0.0:{port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
