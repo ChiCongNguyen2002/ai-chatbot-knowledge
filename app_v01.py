@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List
 
-from search_v01 import search, init_search_index, DOCUMENTS
+from search_v01 import search, DOCUMENTS
 
 app = FastAPI(title="AI Chatbot Knowledge v0.1")
 
@@ -58,13 +58,6 @@ class ChatResponse(BaseModel):
     session_id: str
     answer: str
     sources: List[dict]
-
-
-# ===== STARTUP =====
-@app.on_event("startup")
-async def startup():
-    """Initialize search index on startup."""
-    init_search_index()
 
 
 # ===== ENDPOINTS =====
