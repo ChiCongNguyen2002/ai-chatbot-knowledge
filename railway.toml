@@ -5,5 +5,5 @@ dockerfile = "Dockerfile"
 [deploy]
 startCommand = "bash -c 'ollama serve >/dev/null 2>&1 & sleep 2 && python entrypoint_simple.py'"
 healthcheckPath = "/health"
-healthcheckInterval = 30
-healthcheckTimeout = 10
+healthcheckInterval = 60
+healthcheckTimeout = 600
