@@ -1,0 +1,9 @@
+[build]
+builder = "dockerfile"
+dockerfile = "Dockerfile"
+
+[deploy]
+startCommand = "python entrypoint_phase2.py"
+healthcheckPath = "/health"
+healthcheckInterval = 30
+healthcheckTimeout = 5
