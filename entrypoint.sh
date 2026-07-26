@@ -12,11 +12,11 @@ done
 
 echo "✅ Ollama server ready"
 
-# Pull models if not already present (first run only)
-echo "📥 Pulling models (first run only)..."
-ollama pull phi3:mini
+# Pull lightweight model (tinyllama fits Railway free tier)
+echo "📥 Pulling model (first run only)..."
+ollama pull tinyllama:1b
 
-echo "✅ Models ready (using BM25 search - no embeddings)"
+echo "✅ Model ready"
 
 # Start FastAPI app as foreground process (PID 1)
 exec python app_demo.py

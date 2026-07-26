@@ -14,9 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app_demo.py search.py entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
-# Environment for Railway
+# Environment for Railway (lightweight model for free tier)
 ENV OLLAMA_HOST=http://localhost:11434
-ENV OLLAMA_MODEL=phi3:mini
+ENV OLLAMA_MODEL=tinyllama:1b
 ENV PORT=8000
 
 # NO model baking - will pull at startup instead (faster build, lighter image)
