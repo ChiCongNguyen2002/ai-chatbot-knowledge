@@ -9,7 +9,10 @@ from pydantic import BaseModel
 from typing import List
 
 from search_simple import SimpleSearch
-from synthesis_ultimate import get_synthesis_response
+try:
+    from synthesis_ultimate import get_synthesis_response
+except:
+    from synthesis_fallback import get_fallback_response as get_synthesis_response
 
 app = FastAPI(title="Anfin Knowledge - Phase 4 Lite")
 search = SimpleSearch()
