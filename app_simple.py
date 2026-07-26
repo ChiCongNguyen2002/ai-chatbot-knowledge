@@ -9,10 +9,8 @@ from pydantic import BaseModel
 from typing import List
 
 from search_simple import SimpleSearch
-try:
-    from synthesis_ultimate import get_synthesis_response
-except:
-    from synthesis_fallback import get_fallback_response as get_synthesis_response
+from synthesis_ultimate import get_synthesis_response
+from synthesis_fallback import get_fallback_response
 
 app = FastAPI(title="Anfin Knowledge - Phase 4 Lite")
 search = SimpleSearch()
@@ -67,13 +65,18 @@ async def chat(req: ChatRequest):
             model="fallback"
         )
 
-    # Synthesize
-    result = get_synthesis_response(req.question, docs)
+    # Synthesize (with fallback)
+    try:
+        result = get_synthesis_response(req.question, docs)
+    except Exception as e:
+        # Ollama failed, use fallback structured formatting
+        result = get_fallback_response(req.question, docs)
+
     return ChatResponse(
         session_id=sid,
         answer=result["answer"],
         sources=result["sources"],
-        model=result.get("model", "mistral")
+        model=result.get("model", "fallback")
     )
 
 @app.get("/", response_class=HTMLResponse)
