@@ -38,23 +38,15 @@ OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "mistral")
 
 def call_ollama(question: str, docs: List[dict]) -> str:
-    """Extract relevant content from documents (no LLM needed)"""
+    """Return best document as answer (RAG approach)"""
 
     if not docs:
         return "No relevant documents found. Please rephrase your question."
 
-    # Build answer from document content
-    answer = "Based on the knowledge base:\n\n"
+    # Use TOP 1 best matching document as the answer
+    best_doc = docs[0]
 
-    for i, doc in enumerate(docs, 1):
-        answer += f"**{i}. {doc['title']}:**\n"
-        # Get relevant excerpt (first 300 chars)
-        excerpt = doc['text'][:300]
-        if len(doc['text']) > 300:
-            excerpt += "..."
-        answer += f"{excerpt}\n\n"
-
-    answer += "👉 Click sources below for full details"
+    answer = best_doc['text']
 
     return answer
 
@@ -71,16 +63,15 @@ async def chat(request: ChatRequest):
     # Get answer from Ollama (running locally, NO API COST)
     answer = call_ollama(request.question, docs)
 
-    # Format response with citations
+    # Format response with citation (top 1 source only)
     sources = [
         {
-            "id": doc["id"],
-            "title": doc["title"],
-            "url": doc["url"],
-            "text": doc["text"][:200] + "..."
+            "id": docs[0]["id"],
+            "title": docs[0]["title"],
+            "url": docs[0]["url"],
+            "text": docs[0]["text"][:200] + "..."
         }
-        for doc in docs[:3]
-    ]
+    ] if docs else []
 
     return ChatResponse(
         session_id=session_id,
