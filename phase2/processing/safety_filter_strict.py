@@ -16,9 +16,10 @@ class UltraStrictSafetyFilter:
     """
 
     def __init__(self):
-        self.min_confidence = 0.85  # 85% confidence minimum
+        self.min_confidence = 0.78  # 78% confidence minimum (tighter)
         self.min_top_score = 0.85   # Top result must be 85% relevant
-        self.min_sources = 3        # Need at least 3 relevant sources
+        self.min_sources = 2        # Need at least 2 relevant sources
+        self.min_relevant_score = 0.75  # Sources must be >= 75% relevant
 
     def should_reject(
         self,
@@ -32,23 +33,37 @@ class UltraStrictSafetyFilter:
         Returns:
             (should_reject: bool, reason: str)
         """
+        # No sources at all = definitely reject
+        if not sources:
+            return True, "No documents found"
+
+        # For single result, only check its score (don't require 2+ sources)
+        if len(sources) == 1:
+            top_score = sources[0].get('score', 0)
+            if top_score < self.min_top_score:
+                return True, f"Single result: {top_score:.0%} < {self.min_top_score:.0%}"
+            if confidence < self.min_confidence:
+                return True, f"Low confidence: {confidence:.0%} < {self.min_confidence:.0%}"
+            return False, None
+
+        # For multiple results, apply full checks
         # Check 1: Not enough sources
         if len(sources) < self.min_sources:
-            return True, f"Chỉ tìm {len(sources)} tài liệu, cần ≥3"
+            return True, f"Chỉ {len(sources)} tài liệu, cần ≥{self.min_sources}"
 
         # Check 2: Top result not confident enough
         top_score = sources[0].get('score', 0)
         if top_score < self.min_top_score:
-            return True, f"Độ liên quan chỉ {top_score:.0%}, cần ≥85%"
+            return True, f"Top doc: {top_score:.0%} < {self.min_top_score:.0%}"
 
         # Check 3: Overall confidence too low
         if confidence < self.min_confidence:
-            return True, f"Chỉ {confidence:.0%} confident, cần ≥85%"
+            return True, f"Avg confidence: {confidence:.0%} < {self.min_confidence:.0%}"
 
-        # Check 4: Too many low-scoring sources
-        low_scores = sum(1 for s in sources if s.get('score', 0) < 0.7)
-        if low_scores > 1:
-            return True, f"{low_scores} tài liệu có độ liên quan thấp"
+        # Check 4: Majority of sources must be relevant
+        relevant_sources = sum(1 for s in sources if s.get('score', 0) >= self.min_relevant_score)
+        if relevant_sources < len(sources) * 0.66:  # Need at least 66% relevant
+            return True, f"Only {relevant_sources}/{len(sources)} docs relevant"
 
         # All checks passed
         return False, None

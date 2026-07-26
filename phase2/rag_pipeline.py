@@ -13,6 +13,7 @@ from processing.query_rewriter import QueryRewriter, QueryAnalyzer
 from processing.chunking import SmartChunker
 from processing.metadata_filter import MetadataFilter
 from processing.compression import ContextCompressor, CitationHandler
+from processing.safety_filter_strict import UltraStrictSafetyFilter
 from memory.conversation import ConversationManager
 from knowledge.graph import KnowledgeGraph
 
@@ -85,12 +86,16 @@ class RAGPipeline:
         # Stage 9: Conversation Memory
         self.conversation_manager = ConversationManager()
 
+        # Safety layer (ULTRA-STRICT)
+        self.safety_filter = UltraStrictSafetyFilter()
+
         # Store original documents
         self.documents = documents
 
         print("[RAGPipeline] Initialized with 9-stage architecture")
         print(f"  - {len(documents)} documents indexed")
         print("  - Stages: Rewrite → Search → Rerank → Chunk → Filter → Graph → Compress → Cite → Memory")
+        print("  - Safety: ULTRA-STRICT (85%+ confidence required)")
 
     def search(
         self,
@@ -172,6 +177,18 @@ class RAGPipeline:
         # Calculate confidence (average score of top results)
         confidence = sum(r.get('score', 0) for r in graph_enriched[:top_k]) / max(top_k, 1)
         confidence = min(1.0, confidence)  # Clamp to [0, 1]
+
+        # ULTRA-STRICT SAFETY CHECK - Reject if not confident enough
+        should_reject, reason = self.safety_filter.should_reject(
+            graph_enriched[:top_k],
+            confidence,
+            query
+        )
+
+        if should_reject:
+            final_context = self.safety_filter.get_safe_response(True, confidence)
+            graph_enriched = []  # No sources for "I don't know" response
+            confidence = 0.0
 
         # Calculate latency
         latency_ms = (time.time() - start_time) * 1000
