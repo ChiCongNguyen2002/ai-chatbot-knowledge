@@ -29,6 +29,7 @@ COPY atlassian_ingester_full.py \
 ENV PORT=8000
 ENV PYTHONUNBUFFERED=1
 ENV OLLAMA_HOST=http://localhost:11434
+ENV FORCE_REBUILD=v5
 
 # Setup directories for Ollama
 RUN mkdir -p /root/.ollama/models
