@@ -42,3 +42,4 @@ EXPOSE ${PORT}
 
 # Start with supervisor to manage both Ollama + FastAPI
 CMD ["/usr/bin/supervisord", "-c", "/app/supervisord.conf"]
+# Force rebuild 1785052661
