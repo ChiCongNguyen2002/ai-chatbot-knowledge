@@ -29,8 +29,8 @@ ENV PORT=8000
 ENV PYTHONUNBUFFERED=1
 ENV OLLAMA_HOST=http://localhost:11434
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+# Health check - very long timeout for model download
+HEALTHCHECK --interval=60s --timeout=30s --start-period=60s --retries=5 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 EXPOSE ${PORT}
