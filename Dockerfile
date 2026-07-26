@@ -36,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 EXPOSE ${PORT}
 
 # Simple: Ollama background + FastAPI foreground
-CMD bash -c "ollama serve >/dev/null 2>&1 &" && sleep 2 && python entrypoint_simple.py
+CMD ["/bin/bash", "-c", "ollama serve >/dev/null 2>&1 & sleep 2 && python entrypoint_simple.py"]
